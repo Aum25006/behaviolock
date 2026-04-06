@@ -222,7 +222,16 @@ class _AddMoneyToCardScreenState extends State<AddMoneyToCardScreen> {
                   ),
                 )
               else
-                ...accounts.map((account) => _buildAccountCard(account)),
+                RadioGroup<String>(
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedAccountId = value;
+                    });
+                  },
+                  child: Column(
+                    children: accounts.map((account) => _buildAccountCard(account)).toList(),
+                  ),
+                ),
               
               const SizedBox(height: 24),
               
@@ -298,24 +307,24 @@ class _AddMoneyToCardScreenState extends State<AddMoneyToCardScreen> {
     final isSelected = _selectedAccountId == account.id;
     final hasSufficientFunds = account.balance > 0;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: isSelected ? AppTheme.primaryColor : Colors.grey.shade300,
-          width: isSelected ? 2 : 1,
+    return GestureDetector(
+      onTap: hasSufficientFunds ? () {
+        setState(() {
+          _selectedAccountId = account.id;
+        });
+      } : null,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: isSelected ? AppTheme.primaryColor : Colors.grey.shade300,
+            width: isSelected ? 2 : 1,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.05) : null,
         ),
-        borderRadius: BorderRadius.circular(12),
-        color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.05) : null,
-      ),
-      child: RadioListTile<String>(
-        value: account.id,
-        groupValue: _selectedAccountId,
-        onChanged: hasSufficientFunds ? (value) {
-          setState(() {
-            _selectedAccountId = value;
-          });
-        } : null,
+        child: RadioListTile<String>(
+          value: account.id,
         title: Text(
           account.accountNumber,
           style: TextStyle(
@@ -344,6 +353,7 @@ class _AddMoneyToCardScreenState extends State<AddMoneyToCardScreen> {
           ),
         ),
         controlAffinity: ListTileControlAffinity.trailing,
+        ),
       ),
     );
   }

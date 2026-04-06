@@ -283,7 +283,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _selectedBank,
+                initialValue: _selectedBank,
                 decoration: const InputDecoration(
                   labelText: 'Bank Name',
                   border: OutlineInputBorder(),
@@ -313,7 +313,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<AccountType>(
-                value: _selectedAccountType,
+                initialValue: _selectedAccountType,
                 decoration: const InputDecoration(
                   labelText: 'Account Type',
                   border: OutlineInputBorder(),

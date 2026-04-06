@@ -377,7 +377,7 @@ class _PayByCardScreenState extends State<PayByCardScreen> {
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: _selectedMerchant,
+          initialValue: _selectedMerchant,
           decoration: InputDecoration(
             hintText: 'Select merchant or enter custom',
             border: OutlineInputBorder(

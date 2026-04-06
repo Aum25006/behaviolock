@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:logging/logging.dart';
-import 'screens/auth/login_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'screens/auth/simple_login_screen.dart';
 import 'screens/auth/signup_screen.dart';
 import 'screens/auth/forgot_password_screen.dart';
+import 'screens/auth/behavioral_calibration_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/profile/add_card_screen.dart';
 import 'screens/profile/my_cards_screen.dart';
@@ -17,6 +19,7 @@ import 'services/bank_account_service.dart';
 import 'services/card_service.dart';
 import 'services/settings_service.dart';
 import 'services/profile_service.dart';
+import 'services/keystroke_service.dart';
 import 'constants/app_theme.dart';
 import 'config/api_config.dart';
 
@@ -160,6 +163,10 @@ void main() async {
                 ProfileService(authService: authService, apiService: apiService)
                   ..initialize(),
           ),
+          ChangeNotifierProvider(
+            create: (_) =>
+                KeystrokeService(apiService: apiService)..initialize(),
+          ),
         ],
         child: const KetStrokeBankApp(),
       ),
@@ -204,8 +211,10 @@ class AuthWrapper extends StatefulWidget {
 }
 
 class _AuthWrapperState extends State<AuthWrapper> {
-  bool _showLogin = true;
+  static bool _hasPerformedInitialLogout = false;
   bool _initialized = false;
+  bool _showLogin = true;
+  bool _hasCompletedBehavioralSetup = false;
 
   @override
   void initState() {
@@ -218,7 +227,46 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
+      final keystrokeService = Provider.of<KeystrokeService>(
+        context,
+        listen: false,
+      );
+
+      // Force logout on fresh app launch per security specification
+      if (!_hasPerformedInitialLogout) {
+        await authService.signOut();
+        await keystrokeService.clearAllProfiles();
+        _hasPerformedInitialLogout = true;
+      }
+
       await authService.initAuthService();
+
+      // Reset behavioral setup flag when auth state changes
+      setState(() {
+        _hasCompletedBehavioralSetup = false;
+      });
+
+      // Initialize keystroke service with current user if authenticated
+      final currentUser = authService.currentUser;
+      if (currentUser != null) {
+        await keystrokeService.initialize(currentUser.email);
+        // Load user-specific profile once during initialization
+        await keystrokeService.loadUserProfile(currentUser.email);
+      } else {
+        await keystrokeService.initialize();
+      }
+
+      // Check if current user has completed behavioral setup before
+      final prefs = await SharedPreferences.getInstance();
+      if (currentUser != null) {
+        _hasCompletedBehavioralSetup =
+            prefs.getBool(
+              'has_completed_behavioral_setup_${currentUser.email}',
+            ) ??
+            false;
+      } else {
+        _hasCompletedBehavioralSetup = false;
+      }
 
       if (!mounted) return;
 
@@ -244,21 +292,87 @@ class _AuthWrapperState extends State<AuthWrapper> {
     });
   }
 
+  Future<void> _checkBehavioralSetupStatus(AuthService authService) async {
+    final prefs = await SharedPreferences.getInstance();
+    final currentUser = authService.currentUser;
+    bool hasCompleted = false;
+
+    if (currentUser != null) {
+      hasCompleted =
+          prefs.getBool(
+            'has_completed_behavioral_setup_${currentUser.email}',
+          ) ??
+          false;
+    }
+
+    if (_hasCompletedBehavioralSetup != hasCompleted) {
+      setState(() {
+        _hasCompletedBehavioralSetup = hasCompleted;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_initialized) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    return Selector<AuthService, bool>(
-      selector: (_, authService) => authService.isAuthenticated,
-      builder: (context, isAuthenticated, child) {
-        if (isAuthenticated) {
+    return Consumer2<AuthService, KeystrokeService>(
+      builder: (context, authService, keystrokeService, child) {
+        // Always check behavioral setup status for current user
+        _checkBehavioralSetupStatus(authService);
+
+        if (authService.isAuthenticated) {
+          // Debug logging for behavioral setup flow
+          Logger(
+            'AuthWrapper',
+          ).info('User authenticated: ${authService.currentUser?.email}');
+          Logger(
+            'AuthWrapper',
+          ).info('Has keystroke profile: ${keystrokeService.hasProfile}');
+          Logger('AuthWrapper').info(
+            'Has completed behavioral setup: $_hasCompletedBehavioralSetup',
+          );
+
+          // Check if user needs behavioral setup (only show once)
+          if (!keystrokeService.hasProfile && !_hasCompletedBehavioralSetup) {
+            return BehavioralCalibrationScreen(
+              onCalibrationComplete: () async {
+                // Profile setup complete, mark as done and rebuild
+                final prefs = await SharedPreferences.getInstance();
+                final user = authService.currentUser;
+                if (user != null) {
+                  await prefs.setBool(
+                    'has_completed_behavioral_setup_${user.email}',
+                    true,
+                  );
+                }
+                setState(() {
+                  _hasCompletedBehavioralSetup = true;
+                });
+              },
+              onSkip: () async {
+                // User skipped, mark as done and rebuild
+                final prefs = await SharedPreferences.getInstance();
+                final user = authService.currentUser;
+                if (user != null) {
+                  await prefs.setBool(
+                    'has_completed_behavioral_setup_${user.email}',
+                    true,
+                  );
+                }
+                setState(() {
+                  _hasCompletedBehavioralSetup = true;
+                });
+              },
+            );
+          }
           return const DashboardScreen();
         }
 
         return _showLogin
-            ? LoginScreen(
+            ? SimpleLoginScreen(
                 onSignUpPressed: _toggleAuthScreen,
                 onForgotPasswordPressed: () {
                   Navigator.push(

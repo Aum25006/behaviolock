@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/settings_service.dart';
+import 'behavioral_settings_screen.dart';
+import '../auth/mpin_screens.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -35,9 +37,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onChanged: (v) => settings.setDarkMode(v),
           ),
           const Divider(height: 1),
-          const ListTile(
-            title: Text('Supported Card Networks'),
+          ListTile(
+            leading: const Icon(Icons.security),
+            title: const Text('Behavioral Authentication'),
+            subtitle: const Text('Manage your typing pattern security'),
+            trailing: const Icon(Icons.arrow_forward_ios),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const BehavioralSettingsScreen(),
+                ),
+              );
+            },
           ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.pin),
+            title: const Text('MPIN Security'),
+            subtitle: const Text('Setup or change your Transaction MPIN'),
+            trailing: const Icon(Icons.arrow_forward_ios),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const MpinSetupScreen(),
+                ),
+              );
+            },
+          ),
+          const Divider(height: 1),
+          const ListTile(title: Text('Supported Card Networks')),
           _networkTile(settings, 'Visa'),
           _networkTile(settings, 'Mastercard'),
           _networkTile(settings, 'American Express (Amex)', keyName: 'Amex'),
@@ -45,9 +73,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _networkTile(settings, 'RuPay'),
           _networkTile(settings, 'UnionPay'),
           const Divider(height: 1),
-          const ListTile(
-            title: Text('Supported Card Types'),
-          ),
+          const ListTile(title: Text('Supported Card Types')),
           _typeTile(settings, 'Debit'),
           _typeTile(settings, 'Credit'),
           _typeTile(settings, 'Forex'),
@@ -59,9 +85,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               context: context,
               applicationName: 'KetStroke Bank',
               applicationVersion: '0.1.0',
-              children: const [
-                Text('Demo settings page.'),
-              ],
+              children: const [Text('Demo settings page.')],
             ),
           ),
         ],
@@ -69,7 +93,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _networkTile(SettingsService settings, String label, {String? keyName}) {
+  Widget _networkTile(
+    SettingsService settings,
+    String label, {
+    String? keyName,
+  }) {
     final name = keyName ?? label;
     final enabled = settings.networks.contains(name);
     return CheckboxListTile(
@@ -88,5 +116,3 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 }
-
-

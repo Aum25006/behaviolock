@@ -296,7 +296,7 @@ class _AddCardScreenState extends State<AddCardScreen>
                               ),
                             ))
                         .toList(),
-                    value: _month,
+                    initialValue: _month,
                     onChanged: (v) => setState(() => _month = v),
                     validator: (v) => v == null ? 'Required' : null,
                   ),
@@ -320,7 +320,7 @@ class _AddCardScreenState extends State<AddCardScreen>
                               ),
                             ))
                         .toList(),
-                    value: _year,
+                    initialValue: _year,
                     onChanged: (v) => setState(() => _year = v),
                     validator: (v) => v == null ? 'Required' : null,
                   ),
@@ -339,7 +339,7 @@ class _AddCardScreenState extends State<AddCardScreen>
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _network,
+              initialValue: _network,
               decoration: const InputDecoration(
                 labelText: 'Network',
                 border: OutlineInputBorder(),

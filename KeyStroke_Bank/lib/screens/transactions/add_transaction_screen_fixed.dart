@@ -1196,7 +1196,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     return DropdownButtonFormField<String>(
-      value: _selectedRecipientUserId,
+      initialValue: _selectedRecipientUserId,
       decoration: _inputDecoration(theme: theme, hintText: 'Select recipient user', icon: Icons.person_outline),
       items: _recipientUsers
           .map((u) => DropdownMenuItem<String>(
@@ -1222,7 +1222,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     return DropdownButtonFormField<String>(
-      value: _selectedRecipientAccountId,
+      initialValue: _selectedRecipientAccountId,
       decoration: _inputDecoration(theme: theme, hintText: 'Select recipient account', icon: Icons.account_balance),
       items: _recipientAccounts
           .map((a) => DropdownMenuItem<String>(

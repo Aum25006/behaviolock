@@ -4,6 +4,7 @@ import '../../services/auth_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import '../../services/profile_service.dart';
+import '../auth/mpin_screens.dart';
 
 class PersonalInformationScreen extends StatelessWidget {
   const PersonalInformationScreen({super.key});
@@ -15,9 +16,7 @@ class PersonalInformationScreen extends StatelessWidget {
     final profile = context.watch<ProfileService>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Personal Information'),
-      ),
+      appBar: AppBar(title: const Text('Personal Information')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -30,20 +29,33 @@ class PersonalInformationScreen extends StatelessWidget {
               trailing: IconButton(
                 icon: const Icon(Icons.edit),
                 onPressed: () async {
-                  final ctrl = TextEditingController(text: profile.name ?? user?.name ?? '');
+                  final ctrl = TextEditingController(
+                    text: profile.name ?? user?.name ?? '',
+                  );
                   final newName = await showDialog<String>(
                     context: context,
                     builder: (_) => AlertDialog(
                       title: const Text('Update Name'),
                       content: TextField(controller: ctrl),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-                        TextButton(onPressed: () => Navigator.pop(context, ctrl.text.trim()), child: const Text('Save')),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () =>
+                              Navigator.pop(context, ctrl.text.trim()),
+                          child: const Text('Save'),
+                        ),
                       ],
                     ),
                   );
-                  if (newName != null && newName.isNotEmpty && context.mounted) {
-                    await context.read<ProfileService>().saveProfile(name: newName);
+                  if (newName != null &&
+                      newName.isNotEmpty &&
+                      context.mounted) {
+                    await context.read<ProfileService>().saveProfile(
+                      name: newName,
+                    );
                   }
                 },
               ),
@@ -56,17 +68,26 @@ class PersonalInformationScreen extends StatelessWidget {
               subtitle: const Text('Tap to update'),
               onTap: () async {
                 final picker = ImagePicker();
-                final img = await picker.pickImage(source: ImageSource.gallery, maxWidth: 800);
+                final img = await picker.pickImage(
+                  source: ImageSource.gallery,
+                  maxWidth: 800,
+                );
                 if (img != null && context.mounted) {
                   final bytes = await img.readAsBytes();
                   final b64 = base64Encode(bytes);
                   if (context.mounted) {
-                    await context.read<ProfileService>().saveProfile(photoBase64: b64);
+                    await context.read<ProfileService>().saveProfile(
+                      photoBase64: b64,
+                    );
                   }
                 }
               },
               trailing: (profile.photoBase64 != null)
-                  ? CircleAvatar(backgroundImage: MemoryImage(base64Decode(profile.photoBase64!)))
+                  ? CircleAvatar(
+                      backgroundImage: MemoryImage(
+                        base64Decode(profile.photoBase64!),
+                      ),
+                    )
                   : const CircleAvatar(child: Icon(Icons.person)),
             ),
             const Divider(height: 1),
@@ -88,15 +109,27 @@ class PersonalInformationScreen extends StatelessWidget {
                     context: context,
                     builder: (_) => AlertDialog(
                       title: const Text('Update Phone Number'),
-                      content: TextField(controller: ctrl, keyboardType: TextInputType.phone),
+                      content: TextField(
+                        controller: ctrl,
+                        keyboardType: TextInputType.phone,
+                      ),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-                        TextButton(onPressed: () => Navigator.pop(context, ctrl.text.trim()), child: const Text('Save')),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () =>
+                              Navigator.pop(context, ctrl.text.trim()),
+                          child: const Text('Save'),
+                        ),
                       ],
                     ),
                   );
                   if (value != null && value.isNotEmpty && context.mounted) {
-                    await context.read<ProfileService>().saveProfile(phone: value);
+                    await context.read<ProfileService>().saveProfile(
+                      phone: value,
+                    );
                   }
                 },
               ),
@@ -109,20 +142,31 @@ class PersonalInformationScreen extends StatelessWidget {
               trailing: IconButton(
                 icon: const Icon(Icons.edit),
                 onPressed: () async {
-                  final ctrl = TextEditingController(text: profile.address ?? '');
+                  final ctrl = TextEditingController(
+                    text: profile.address ?? '',
+                  );
                   final value = await showDialog<String>(
                     context: context,
                     builder: (_) => AlertDialog(
                       title: const Text('Update Address'),
                       content: TextField(controller: ctrl, maxLines: 3),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-                        TextButton(onPressed: () => Navigator.pop(context, ctrl.text.trim()), child: const Text('Save')),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () =>
+                              Navigator.pop(context, ctrl.text.trim()),
+                          child: const Text('Save'),
+                        ),
                       ],
                     ),
                   );
                   if (value != null && value.isNotEmpty && context.mounted) {
-                    await context.read<ProfileService>().saveProfile(address: value);
+                    await context.read<ProfileService>().saveProfile(
+                      address: value,
+                    );
                   }
                 },
               ),
@@ -130,24 +174,33 @@ class PersonalInformationScreen extends StatelessWidget {
             const Divider(height: 1),
             ListTile(
               leading: const Icon(Icons.lock_outline),
-              title: const Text('MPIN (6 digits)'),
+              title: const Text('MPIN (4 digits)'),
               subtitle: const Text('Required before transactions'),
               trailing: ElevatedButton(
                 onPressed: () async {
-                  // Force set/update MPIN
-                  await context.read<ProfileService>().requireMpin(context);
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const MpinSetupScreen()),
+                  );
                 },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.inverseSurface,
+                  foregroundColor: Theme.of(
+                    context,
+                  ).colorScheme.onInverseSurface,
+                ),
                 child: const Text('Set/Update'),
               ),
             ),
             const Divider(height: 1),
             const SizedBox(height: 12),
-            const Text('Your details are stored locally for demo.' , style: TextStyle(color: Colors.grey)),
+            const Text(
+              'Your details are stored locally for demo.',
+              style: TextStyle(color: Colors.grey),
+            ),
           ],
         ),
       ),
     );
   }
 }
-
-

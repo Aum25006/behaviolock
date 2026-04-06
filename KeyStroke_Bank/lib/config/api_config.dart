@@ -3,22 +3,8 @@ import 'dart:io' show Platform;
 
 class ApiConfig {
   static String get baseUrl {
-    if (kIsWeb) {
-      // For web, try multiple possible URLs
-      // You can change this to your specific network IP if needed
-      return 'http://localhost:5000'; // Default for web
-    } else {
-      // For mobile platforms
-      if (Platform.isAndroid) {
-        // Check if running on emulator or physical device
-        // For now, default to emulator URL - change to localhost:5000 for physical device
-        return 'http://10.0.2.2:5000';
-      } else if (Platform.isIOS) {
-        return 'http://localhost:5000';
-      } else {
-        return 'http://localhost:5000';
-      }
-    }
+    // Always use direct connection to Flask backend
+    return 'http://localhost:5000';
   }
   
   static String get webBaseUrl => 'http://localhost:5000';

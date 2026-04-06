@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'auth_service.dart';
 
 class ApiService {
@@ -11,32 +10,22 @@ class ApiService {
   // Initialize with base URL and optional auth service
   ApiService({required String baseUrl, AuthService? authService}) 
       : _authService = authService {
-    // For web, use empty base URL to allow proxy to handle the routing
-    if (kIsWeb) {
-      _dio.options.baseUrl = ''; // Use relative URLs for web
-      _logger.warning('Running in web mode with relative URLs');
-    } else {
-      // For non-web, use the provided base URL
-      String normalizedBaseUrl = baseUrl.endsWith('/') 
-          ? baseUrl.substring(0, baseUrl.length - 1) 
-          : baseUrl;
-      _dio.options.baseUrl = normalizedBaseUrl;
-      _logger.info('Running in native mode with base URL: $normalizedBaseUrl');
-    }
+    // Always use the provided base URL for direct backend connection
+    String normalizedBaseUrl = baseUrl.endsWith('/') 
+        ? baseUrl.substring(0, baseUrl.length - 1) 
+        : baseUrl;
+    _dio.options.baseUrl = normalizedBaseUrl;
+    _logger.info('Initialized with base URL: $normalizedBaseUrl');
     _dio.options.connectTimeout = const Duration(seconds: 30); // Increased timeout
     _dio.options.receiveTimeout = const Duration(seconds: 30); // Increased timeout
     _dio.options.responseType = ResponseType.json;
     _dio.options.followRedirects = true;
     _dio.options.validateStatus = (status) => status! < 500;
     
-    // Configure default headers
+    // Configure default headers (only client headers, not CORS headers)
     _dio.options.headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Origin, Content-Type, Accept, Authorization',
-      'Access-Control-Allow-Credentials': 'true',
     };
     
     // Add request interceptor for logging

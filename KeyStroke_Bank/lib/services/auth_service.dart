@@ -14,10 +14,10 @@ final _logger = Logger('AuthService');
 class AuthService with ChangeNotifier {
   static const String _tokenKey = 'auth_token';
   static const String _userKey = 'current_user';
-  
+
   final LocalAuthentication _localAuth = LocalAuthentication();
   late ApiService _apiService;
-  
+
   String? _token;
   UserModel? _currentUser;
   bool _isLoading = false;
@@ -28,41 +28,41 @@ class AuthService with ChangeNotifier {
   AuthService({required ApiService apiService}) {
     _apiService = apiService;
   }
-  
+
   // Method to update the ApiService reference (for circular dependency resolution)
   void updateApiService(ApiService apiService) {
     _apiService = apiService;
   }
-  
+
   // Getters
   UserModel? get currentUser => _currentUser;
-  
+
   /// Attempts to refresh the authentication token using the refresh token
   /// Returns true if the token was successfully refreshed, false otherwise
   Future<bool> refreshToken() async {
     if (_isLoading) return false;
-    
+
     final prefs = await SharedPreferences.getInstance();
     final refreshToken = prefs.getString('refresh_token');
-    
+
     if (refreshToken == null) {
       _logger.warning('No refresh token available');
       return false;
     }
-    
+
     _isLoading = true;
     _error = null;
     notifyListeners();
-    
+
     try {
       _logger.info('Attempting to refresh authentication token');
-      
+
       // Call the refresh token endpoint
       final response = await _apiService.post(
         '/api/auth/refresh',
         data: {'refreshToken': refreshToken},
       );
-      
+
       if (response['token'] != null) {
         // Save the new token
         await _saveToken(response['token']);
@@ -83,25 +83,25 @@ class AuthService with ChangeNotifier {
       notifyListeners();
     }
   }
-  
+
   Future<void> _saveToken(String token) async {
     _logger.fine('Saving token to memory and shared preferences');
     _token = token;
-    
+
     // Save token to shared preferences
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, token);
-    
+
     // Set token in API service
     _apiService.setAuthToken(token);
     _logger.fine('Token set in API service');
-    
+
     // Decode token to get user info
     try {
       // Decode the JWT token to get user claims
       final Map<String, dynamic> decoded = jwt_decoder.JwtDecoder.decode(token);
       _logger.fine('Decoded token claims: $decoded');
-      
+
       // Extract user data from the token claims and ensure all fields are non-null
       final userData = <String, dynamic>{
         'id': decoded['sub']?.toString() ?? '',
@@ -109,14 +109,14 @@ class AuthService with ChangeNotifier {
         'name': decoded['name']?.toString() ?? '',
         'phoneNumber': decoded['phoneNumber']?.toString() ?? '',
       };
-      
+
       // Create user model from the extracted data
       _currentUser = UserModel.fromMap(userData);
-      
+
       // Save to shared preferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_tokenKey, token);
-      
+
       // Save user data
       if (_currentUser != null) {
         await prefs.setString(_userKey, _currentUser!.toJson());
@@ -126,16 +126,16 @@ class AuthService with ChangeNotifier {
       throw Exception('Invalid token format');
     }
   }
-  
+
   Future<void> _clearAuthState() async {
     _logger.fine('Clearing authentication state');
     _token = null;
     _currentUser = null;
-    
+
     // Clear token from API service
     _apiService.setAuthToken(null);
     _logger.fine('Cleared token from API service');
-    
+
     // Clear from shared preferences
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -146,38 +146,41 @@ class AuthService with ChangeNotifier {
       _logger.severe('Error clearing auth data from shared preferences', e);
       // Don't rethrow - we want to continue even if clearing fails
     }
-    
+
     notifyListeners();
   }
+
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get isAuthenticated => _currentUser != null && _token != null;
   String? get token => _token;
   bool get isInitialized => _isInitialized;
-  
+
   /// Initializes the authentication service by loading the token and user data from shared preferences.
   /// This should be called when the app starts.
   Future<void> initAuthService() async {
     if (_isInitialized) return;
-    
+
     _logger.fine('Initializing AuthService');
     _isLoading = true;
     _error = null;
-    
+
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Load token from shared preferences
       final token = prefs.getString(_tokenKey);
-      
+
       if (token != null) {
         _logger.info('Found stored token, loading user data');
         _token = token;
-        
+
         // Set the token in the API service immediately
         _apiService.setAuthToken(token);
-        _logger.info('Token set in API service: ${_apiService.hasAuthToken ? 'YES' : 'NO'}');
-        
+        _logger.info(
+          'Token set in API service: ${_apiService.hasAuthToken ? 'YES' : 'NO'}',
+        );
+
         // Load user data
         final userJson = prefs.getString(_userKey);
         if (userJson != null) {
@@ -199,7 +202,7 @@ class AuthService with ChangeNotifier {
       } else {
         _logger.fine('No stored token found');
       }
-      
+
       _isInitialized = true;
       _logger.info('AuthService initialized');
     } catch (e, stackTrace) {
@@ -226,12 +229,14 @@ class AuthService with ChangeNotifier {
 
     try {
       _logger.fine('Attempting to register user: $email');
-      
+
       final response = await _apiService.post(
         '/api/auth/signup',
         data: {
           'first_name': name.split(' ').first,
-          'last_name': name.split(' ').length > 1 ? name.split(' ').skip(1).join(' ') : '',
+          'last_name': name.split(' ').length > 1
+              ? name.split(' ').skip(1).join(' ')
+              : '',
           'email': email,
           'password': password,
           'phone': phoneNumber,
@@ -296,16 +301,22 @@ class AuthService with ChangeNotifier {
             _logger.fine('Loading user data from SharedPreferences');
             final userMap = jsonDecode(userData) as Map<String, dynamic>;
             _currentUser = UserModel.fromMap(userMap);
-            _logger.info('User loaded from SharedPreferences: ${_currentUser?.email}');
+            _logger.info(
+              'User loaded from SharedPreferences: ${_currentUser?.email}',
+            );
           } catch (e, stackTrace) {
-            _logger.severe('Error loading user data from SharedPreferences', e, stackTrace);
+            _logger.severe(
+              'Error loading user data from SharedPreferences',
+              e,
+              stackTrace,
+            );
             // If we can't load the user data, try to fetch it from the API
-            await _fetchCurrentUser();
+            await fetchCurrentUser();
           }
         } else {
           // If no user data in local storage, fetch from API
           _logger.fine('No user data in SharedPreferences, fetching from API');
-          await _fetchCurrentUser();
+          await fetchCurrentUser();
         }
       }
     } catch (e, stackTrace) {
@@ -318,23 +329,25 @@ class AuthService with ChangeNotifier {
   }
 
   // Fetch current user from API
-  Future<void> _fetchCurrentUser() async {
+  Future<void> fetchCurrentUser() async {
     try {
       _logger.fine('Fetching current user from API');
       final response = await _apiService.get('/api/user/me');
-      
+
       // Check if response is a string (error message) or Map
       if (response is String) {
         _logger.warning('API returned string instead of JSON: $response');
         // Check if it's an authentication error
-        if (response.toLowerCase().contains('unauthorized') || 
+        if (response.toLowerCase().contains('unauthorized') ||
             response.toLowerCase().contains('401') ||
             response.toLowerCase().contains('jwt')) {
-          throw Exception('Authentication required. Please check your credentials.');
+          throw Exception(
+            'Authentication required. Please check your credentials.',
+          );
         }
         throw Exception(response);
       }
-      
+
       // At this point, response should be a Map<String, dynamic>
       _currentUser = _createUserFromResponse(response);
       await _saveUser(_currentUser!);
@@ -356,10 +369,6 @@ class AuthService with ChangeNotifier {
     notifyListeners();
   }
 
-
-
-
-
   // Sign in with email and password
   Future<bool> signInWithEmailAndPassword({
     required String email,
@@ -371,17 +380,14 @@ class AuthService with ChangeNotifier {
 
     try {
       _logger.fine('Attempting to sign in user: $email');
-      
+
       // Log the request details
       _logger.fine('Sending login request to /api/auth/login');
       _logger.finest('Request data: {"email": "$email", "password": "****"}');
-      
+
       final response = await _apiService.post(
         '/api/auth/login',
-        data: {
-          'email': email,
-          'password': password,
-        },
+        data: {'email': email, 'password': password},
       );
 
       _logger.fine('Login response received');
@@ -392,31 +398,37 @@ class AuthService with ChangeNotifier {
         _logger.warning('API returned string instead of JSON: $response');
         // Check if it's an authentication error
         final responseStr = response as String;
-        if (responseStr.toLowerCase().contains('unauthorized') || 
+        if (responseStr.toLowerCase().contains('unauthorized') ||
             responseStr.toLowerCase().contains('401') ||
             responseStr.toLowerCase().contains('jwt')) {
-          throw Exception('Authentication required. Please check your credentials.');
+          throw Exception(
+            'Authentication required. Please check your credentials.',
+          );
         }
         throw Exception(response);
       }
 
       // Check if the response contains the expected data
       if (response['access_token'] == null) {
-        _logger.warning('No access_token in response. Response keys: ${response.keys}');
+        _logger.warning(
+          'No access_token in response. Response keys: ${response.keys}',
+        );
         throw Exception('No access token received from server');
       }
 
       // If we get here, the request was successful
       final token = response['access_token'] as String;
       _logger.fine('Received access token: ${token.substring(0, 10)}...');
-      
+
       // Handle different response structures
       Map<String, dynamic> userData;
       if (response['user'] != null) {
         _logger.fine('Found user data in response');
         userData = response['user'] as Map<String, dynamic>;
       } else {
-        _logger.warning('No user data in response, creating minimal user object');
+        _logger.warning(
+          'No user data in response, creating minimal user object',
+        );
         // If user data is not in the response, create a minimal user object
         userData = {
           'id': response['user_id'] ?? 'unknown',
@@ -424,21 +436,21 @@ class AuthService with ChangeNotifier {
           'name': response['name'] ?? email.split('@').first,
         };
       }
-      
+
       if (token.isNotEmpty) {
         try {
           _logger.fine('Creating UserModel from response data');
           // Create UserModel using our helper method
           final user = _createUserFromResponse(userData);
-          
+
           _logger.fine('Saving token and user data');
           // Save the token and user data
           await _saveToken(token);
           await _saveUser(user);
-          
+
           // Set the token in the API service
           _apiService.setAuthToken(token);
-          
+
           _logger.info('User ${user.email} signed in successfully');
           return true;
         } catch (e, stackTrace) {
@@ -456,7 +468,9 @@ class AuthService with ChangeNotifier {
       if (e.response != null) {
         _logger.severe('Error response data: ${e.response?.data}');
         _logger.severe('Status code: ${e.response?.statusCode}');
-        _error = e.response?.data['message'] ?? 'Login failed. Please check your credentials.';
+        _error =
+            e.response?.data['message'] ??
+            'Login failed. Please check your credentials.';
       } else {
         _error = 'Network error. Please check your connection.';
       }
@@ -477,9 +491,7 @@ class AuthService with ChangeNotifier {
     notifyListeners();
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_userKey);
-      _currentUser = null;
+      await _logout();
     } catch (e) {
       _error = 'Failed to sign out';
       debugPrint('Sign out error: $e');
@@ -541,29 +553,29 @@ class AuthService with ChangeNotifier {
   Future<void> _saveAuthData(String token, UserModel user) async {
     try {
       _logger.fine('Saving auth data for user: ${user.email}');
-      
+
       // Debug log the user data before saving
       _logger.finest('User data to save: ${user.toJson()}');
-      
+
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Save token
       await prefs.setString(_tokenKey, token);
       _logger.finest('Token saved successfully');
-      
+
       // Convert user to JSON and save
       final userJsonString = user.toJson();
       await prefs.setString(_userKey, userJsonString);
       _logger.finest('User data saved successfully');
-      
+
       // Update current user and authentication state
       _currentUser = user;
       _isLoading = false;
       _error = null;
-      
+
       // Set the token in the API service for future requests
       _apiService.setAuthToken(token);
-      
+
       _logger.info('Auth data saved successfully for user: ${user.email}');
       notifyListeners();
     } catch (e, stackTrace) {

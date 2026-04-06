@@ -70,6 +70,11 @@ dependencies:
   share_plus: ^7.2.1
   permission_handler: ^11.1.0
 
+  # ML & Behavioral Analysis (simplified for now)
+  # tflite_flutter: ^0.10.4
+  # tflite_flutter_helper: ^0.3.1
+  collection: ^1.18.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

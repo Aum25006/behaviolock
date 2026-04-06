@@ -10,6 +10,7 @@ import 'package:ket_stroke_bank/models/transaction_model.dart';
 import 'package:ket_stroke_bank/services/auth_service.dart';
 import 'package:ket_stroke_bank/services/bank_account_service.dart';
 import 'package:ket_stroke_bank/services/transaction_service.dart';
+import 'package:ket_stroke_bank/services/keystroke_service.dart';
 import 'package:ket_stroke_bank/screens/accounts/add_account_screen.dart';
 import 'package:ket_stroke_bank/screens/accounts/manage_accounts_screen.dart';
 import 'package:ket_stroke_bank/screens/transactions/add_transaction_screen_fixed.dart';
@@ -26,19 +27,16 @@ final _logger = Logger('DashboardScreen');
 
 class DashboardScreen extends StatefulWidget {
   final Function(int)? onTabTapped;
-  
-  const DashboardScreen({
-    super.key,
-    this.onTabTapped,
-  });
-  
+
+  const DashboardScreen({super.key, this.onTabTapped});
+
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  
+
   @override
   void initState() {
     super.initState();
@@ -47,15 +45,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _loadInitialData();
     });
   }
-  
+
   Future<void> _loadInitialData() async {
     if (!mounted) return;
-    
+
     try {
       // Access services using Provider
       final authService = Provider.of<AuthService>(context, listen: false);
-      final bankAccountService = Provider.of<BankAccountService>(context, listen: false);
-      
+      final bankAccountService = Provider.of<BankAccountService>(
+        context,
+        listen: false,
+      );
+
       // Load initial data if needed
       if (authService.isAuthenticated) {
         // Initialize the bank account service which will load the accounts
@@ -67,7 +68,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Some data may be unavailable - app will work in offline mode'),
+              content: Text(
+                'Some data may be unavailable - app will work in offline mode',
+              ),
               backgroundColor: Colors.orange,
               duration: Duration(seconds: 3),
             ),
@@ -76,7 +79,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthService>(
@@ -164,17 +167,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
       },
     );
   }
-  
-  Future<void> _handleSignOut(AuthService authService, BuildContext context) async {
+
+  Future<void> _handleSignOut(
+    AuthService authService,
+    BuildContext context,
+  ) async {
     try {
       await authService.signOut();
       if (!mounted) return;
       final navigatorContext = this.context;
       if (navigatorContext.mounted) {
-        Navigator.of(navigatorContext).pushNamedAndRemoveUntil(
-          '/',
-          (route) => false,
-        );
+        Navigator.of(
+          navigatorContext,
+        ).pushNamedAndRemoveUntil('/', (route) => false);
       }
     } catch (e) {
       if (!mounted) return;
@@ -186,7 +191,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
     }
   }
-  
+
   int _selectedIndex = 0;
 
   void _onItemTapped(int index) {
@@ -207,7 +212,7 @@ class _HomeTabState extends State<_HomeTab> {
   String? _authToken;
   String? _selectedAccountId; // null => All Accounts
   static const String _kSelectedAccountPrefKey = 'dashboard.selectedAccountId';
-  
+
   // Helper method to safely update state
   void _safeSetState(VoidCallback fn) {
     if (mounted) {
@@ -218,14 +223,14 @@ class _HomeTabState extends State<_HomeTab> {
       });
     }
   }
-  
+
   @override
   void initState() {
     super.initState();
     // Get auth token when widget initializes
     final authService = Provider.of<AuthService>(context, listen: false);
     _authToken = authService.token;
-    
+
     // Load initial data after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadTransactionData();
@@ -236,16 +241,22 @@ class _HomeTabState extends State<_HomeTab> {
   // Load transaction data from the service
   Future<void> _loadTransactionData() async {
     if (!mounted || _authToken == null) return;
-    
+
     try {
-      final transactionService = Provider.of<TransactionService>(context, listen: false);
-      final bankAccountService = Provider.of<BankAccountService>(context, listen: false);
-      
+      final transactionService = Provider.of<TransactionService>(
+        context,
+        listen: false,
+      );
+      final bankAccountService = Provider.of<BankAccountService>(
+        context,
+        listen: false,
+      );
+
       // Initialize services
       try {
         // Initialize transaction service first (no auth token needed)
         await transactionService.initialize();
-        
+
         // Initialize bank account service
         await bankAccountService.initialize();
       } catch (e) {
@@ -253,7 +264,7 @@ class _HomeTabState extends State<_HomeTab> {
         // Don't rethrow - let the app continue with empty data
         return;
       }
-      
+
       if (mounted) {
         _safeSetState(() {});
       }
@@ -263,7 +274,9 @@ class _HomeTabState extends State<_HomeTab> {
         // Show a more user-friendly message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Some data may be unavailable - app will work in offline mode'),
+            content: Text(
+              'Some data may be unavailable - app will work in offline mode',
+            ),
             backgroundColor: Colors.orange,
             duration: Duration(seconds: 3),
           ),
@@ -319,16 +332,21 @@ class _HomeTabState extends State<_HomeTab> {
     }
   }
 
-  Widget _buildSummaryItem(String label, String amount, Color color, IconData icon) {
+  Widget _buildSummaryItem(
+    String label,
+    String amount,
+    Color color,
+    IconData icon,
+  ) {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(4),
+          padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: color.withAlpha((255 * 0.1).toInt()),
-            borderRadius: BorderRadius.circular(4),
+            color: color.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, size: 16, color: color),
+          child: Icon(icon, size: 18, color: color),
         ),
         const SizedBox(width: 8),
         Column(
@@ -336,10 +354,7 @@ class _HomeTabState extends State<_HomeTab> {
           children: [
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
             Text(
               amount,
@@ -355,7 +370,10 @@ class _HomeTabState extends State<_HomeTab> {
     );
   }
 
-  void _showTransactionDetails(BuildContext context, TransactionModel transaction) {
+  void _showTransactionDetails(
+    BuildContext context,
+    TransactionModel transaction,
+  ) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -386,7 +404,11 @@ class _HomeTabState extends State<_HomeTab> {
                     color: transaction.color.withAlpha((255 * 0.2).toInt()),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(transaction.icon, color: transaction.color, size: 24),
+                  child: Icon(
+                    transaction.icon,
+                    color: transaction.color,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Column(
@@ -439,7 +461,7 @@ class _HomeTabState extends State<_HomeTab> {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(transaction.recipient!),  
+              Text(transaction.recipient!),
             ],
             if (transaction.reference != null) ...[
               const SizedBox(height: 16),
@@ -475,70 +497,72 @@ class _HomeTabState extends State<_HomeTab> {
 
   // Show delete confirmation dialog
   Future<void> _showDeleteConfirmation(
-    BuildContext context, 
-    BankAccount account, 
+    BuildContext context,
+    BankAccount account,
     BankAccountService bankAccountService,
   ) async {
     if (!mounted || _authToken == null) return;
-  
-  // Get local reference to ScaffoldMessenger before any async operations
-  final scaffoldMessenger = ScaffoldMessenger.of(context);
-  
-  final shouldDelete = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text('Delete Account'),
-      content: Text(
-          'Are you sure you want to delete the account ending in ${account.accountNumber.length > 4 ? account.accountNumber.substring(account.accountNumber.length - 4) : account.accountNumber}?'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancel'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(context, true),
-          child: const Text('Delete', style: TextStyle(color: Colors.red)),
-        ),
-      ],
-    ),
-  );
 
-  if (shouldDelete != true) return;
-  
-  try {
-    final success = await bankAccountService.deleteAccount(account.id);
-    
-    if (!mounted) return;
-    
-    if (success) {
-      // Force a refresh of the accounts list
-      await bankAccountService.initialize();
-      
+    // Get local reference to ScaffoldMessenger before any async operations
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Account'),
+        content: Text(
+          'Are you sure you want to delete the account ending in ${account.accountNumber.length > 4 ? account.accountNumber.substring(account.accountNumber.length - 4) : account.accountNumber}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDelete != true) return;
+
+    try {
+      final success = await bankAccountService.deleteAccount(account.id);
+
       if (!mounted) return;
-      scaffoldMessenger.showSnackBar(
-        const SnackBar(content: Text('Account deleted successfully')),
-      );
-    } else if (mounted) {
+
+      if (success) {
+        // Force a refresh of the accounts list
+        await bankAccountService.initialize();
+
+        if (!mounted) return;
+        scaffoldMessenger.showSnackBar(
+          const SnackBar(content: Text('Account deleted successfully')),
+        );
+      } else if (mounted) {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              'Failed to delete account: ${bankAccountService.error ?? 'Unknown error'}',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e, stackTrace) {
+      _logger.severe('Error deleting account', e, stackTrace);
+      if (!mounted) return;
+
       scaffoldMessenger.showSnackBar(
         SnackBar(
-          content: Text(
-              'Failed to delete account: ${bankAccountService.error ?? 'Unknown error'}'),
+          content: Text('Error deleting account: ${e.toString()}'),
           backgroundColor: Colors.red,
         ),
       );
     }
-  } catch (e, stackTrace) {
-    _logger.severe('Error deleting account', e, stackTrace);
-    if (!mounted) return;
-    
-    scaffoldMessenger.showSnackBar(
-      SnackBar(
-        content: Text('Error deleting account: ${e.toString()}'),
-        backgroundColor: Colors.red,
-      ),
-    );
-  }  
-}
+  }
 
   Widget _buildTransactionItem(TransactionModel transaction) {
     return ListTile(
@@ -548,11 +572,7 @@ class _HomeTabState extends State<_HomeTab> {
           color: transaction.color.withAlpha((255 * 0.2).round()),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(
-          transaction.icon,
-          color: transaction.color,
-          size: 20,
-        ),
+        child: Icon(transaction.icon, color: transaction.color, size: 20),
       ),
       title: Text(
         transaction.title,
@@ -576,28 +596,37 @@ class _HomeTabState extends State<_HomeTab> {
     );
   }
 
-  Widget _buildActionButton(String label, IconData icon, VoidCallback onPressed) {
+  Widget _buildActionButton(
+    String label,
+    IconData icon,
+    VoidCallback onPressed,
+  ) {
     return GestureDetector(
       onTap: onPressed,
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withAlpha((255 * 0.1).toInt()),
+              color: Colors.white,
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.08),
+                  blurRadius: 15,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
-            child: Icon(
-              icon,
-              color: AppTheme.primaryColor,
-            ),
+            child: Icon(icon, color: AppTheme.secondaryColor, size: 28),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(
             label,
             style: const TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textColor,
             ),
           ),
         ],
@@ -610,6 +639,8 @@ class _HomeTabState extends State<_HomeTab> {
     final transactionService = Provider.of<TransactionService>(context);
     final bankAccountService = Provider.of<BankAccountService>(context);
     final authService = Provider.of<AuthService>(context);
+    final keystrokeService = Provider.of<KeystrokeService>(context);
+
     // Get user's first name or default to 'User'
     final userName = authService.currentUser?.name.split(' ').first ?? 'User';
     final accounts = bankAccountService.accounts;
@@ -627,44 +658,60 @@ class _HomeTabState extends State<_HomeTab> {
       final sel = bankAccountService.getAccountById(_selectedAccountId!);
       totalBalance = sel?.balance ?? 0.0;
     }
-    final totalIncome = transactionService.getIncomeForAccount(_selectedAccountId);
-    final totalExpenses = transactionService.getExpensesForAccount(_selectedAccountId);
+    final totalIncome = transactionService.getIncomeForAccount(
+      _selectedAccountId,
+    );
+    final totalExpenses = transactionService.getExpensesForAccount(
+      _selectedAccountId,
+    );
     final recentTransactions = transactionService.recentTransactions;
 
     if (transactionService.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
+    // Keystroke ML status
+    final stats = keystrokeService.getBehavioralStats();
+    final bool isSecure = stats['hasProfile'] == true;
+    final int confidence = (stats['confidenceScore'] as double?)?.toInt() ?? 0;
+
     return RefreshIndicator(
       onRefresh: _handleRefresh,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(
+          0.0,
+        ), // Zero padding for edge-to-edge header
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Welcome Header
-            Text(
-              'Welcome back, $userName 👋',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Balance Card + Account Selector
+            // FAADU PREMIUM HEADER (AXIS GLOW STYLE)
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.only(
+                top: 60,
+                left: 24,
+                right: 24,
+                bottom: 35,
+              ),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor,
-                borderRadius: BorderRadius.circular(16),
+                gradient: const LinearGradient(
+                  colors: [
+                    Color(0xFF8B0015), // Deep Mahogany
+                    Color(0xFFD60029), // Crimson Red
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(40),
+                  bottomRight: Radius.circular(40),
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withAlpha(25), // ~10% opacity
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                    color: const Color(0xFF8B0015).withValues(alpha: 0.5),
+                    blurRadius: 30,
+                    offset: const Offset(0, 15),
                   ),
                 ],
               ),
@@ -674,77 +721,221 @@ class _HomeTabState extends State<_HomeTab> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Total Balance',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Welcome back,',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 16,
+                            ),
+                          ),
+                          Text(
+                            userName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 32,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Animated Behavioral Lock Shield
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: isSecure
+                              ? Colors.greenAccent.withValues(alpha: 0.15)
+                              : Colors.orangeAccent.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isSecure
+                                ? Colors.greenAccent
+                                : Colors.orangeAccent,
+                            width: 2,
+                          ),
+                          boxShadow: [
+                            if (isSecure)
+                              BoxShadow(
+                                color: Colors.greenAccent.withValues(
+                                  alpha: 0.6,
+                                ),
+                                blurRadius: 20,
+                                spreadRadius: 3,
+                              )
+                            else
+                              BoxShadow(
+                                color: Colors.orangeAccent.withValues(
+                                  alpha: 0.5,
+                                ),
+                                blurRadius: 20,
+                                spreadRadius: 3,
+                              ),
+                          ],
+                        ),
+                        child: Icon(
+                          isSecure
+                              ? Icons.fingerprint
+                              : Icons.warning_amber_rounded,
+                          color: isSecure
+                              ? Colors.greenAccent
+                              : Colors.orangeAccent,
+                          size: 36,
                         ),
                       ),
-                      if (accounts.isNotEmpty)
-                        DropdownButtonHideUnderline(
-                          child: DropdownButton<String?>(
-                            value: _selectedAccountId,
-                            dropdownColor: AppTheme.primaryColor,
-                            iconEnabledColor: Colors.white,
-                            style: const TextStyle(color: Colors.white),
-                            items: [
-                              const DropdownMenuItem<String?>(
-                                value: null,
-                                child: Text('All Accounts', style: TextStyle(color: Colors.white)),
-                              ),
-                              ...accounts.map((a) {
-                                final last4 = a.accountNumber.length >= 4
-                                    ? a.accountNumber.substring(a.accountNumber.length - 4)
-                                    : a.accountNumber;
-                                final label = '${a.bankName} •••• $last4';
-                                return DropdownMenuItem<String?>(
-                                  value: a.id,
-                                  child: Text(label, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white)),
-                                );
-                              }),
-                            ],
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedAccountId = value;
-                              });
-                              _persistSelectedAccountPreference(value);
-                            },
-                          ),
-                        ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 35),
+                  const Text(
+                    'Total Balance',
+                    style: TextStyle(color: Colors.white70, fontSize: 15),
+                  ),
+                  const SizedBox(height: 4),
                   Text(
                     '₹${totalBalance.toStringAsFixed(2)}',
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 42,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -1.5,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 30),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildSummaryItem(
-                        'Income',
-                        '₹${totalIncome.toStringAsFixed(2)}',
-                        Colors.green,
-                        Icons.arrow_upward,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(25),
+                          border: Border.all(color: Colors.white24, width: 0.5),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.shield,
+                              color: Colors.amberAccent,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              isSecure
+                                  ? 'Active: $confidence% Match'
+                                  : 'Setup Lock!',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      _buildSummaryItem(
-                        'Expenses',
-                        '₹${totalExpenses.abs().toStringAsFixed(2)}',
-                        Colors.red,
-                        Icons.arrow_downward,
-                      ),
+                      const Spacer(),
+                      if (accounts.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String?>(
+                              value: _selectedAccountId,
+                              dropdownColor: const Color(0xFF8B0015),
+                              icon: const Icon(
+                                Icons.keyboard_arrow_down,
+                                color: Colors.white70,
+                              ),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              items: [
+                                const DropdownMenuItem<String?>(
+                                  value: null,
+                                  child: Text('All Accounts'),
+                                ),
+                                ...accounts.map((a) {
+                                  final last4 = a.accountNumber.length >= 4
+                                      ? a.accountNumber.substring(
+                                          a.accountNumber.length - 4,
+                                        )
+                                      : a.accountNumber;
+                                  return DropdownMenuItem<String?>(
+                                    value: a.id,
+                                    child: Text('${a.bankName} •••• $last4'),
+                                  );
+                                }),
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedAccountId = value;
+                                });
+                                _persistSelectedAccountPreference(value);
+                              },
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 25),
+
+            // Body Content Padding
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Sleek White Glassmorphic-style Income/Expenses Card
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildSummaryItem(
+                          'Income',
+                          '₹${totalIncome.toStringAsFixed(2)}',
+                          Colors.green,
+                          Icons.arrow_upward,
+                        ),
+                        Container(
+                          height: 45,
+                          width: 1.5,
+                          color: Colors.grey.shade100,
+                        ),
+                        _buildSummaryItem(
+                          'Expenses',
+                          '₹${totalExpenses.abs().toStringAsFixed(2)}',
+                          Colors.red,
+                          Icons.arrow_downward,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
 
             // Bank Accounts Section
             Row(
@@ -752,10 +943,7 @@ class _HomeTabState extends State<_HomeTab> {
               children: [
                 const Text(
                   'My Accounts',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Row(
                   children: [
@@ -768,7 +956,7 @@ class _HomeTabState extends State<_HomeTab> {
                             builder: (context) => const ManageAccountsScreen(),
                           ),
                         );
-                        
+
                         // Refresh accounts when returning from ManageAccountsScreen
                         if (!mounted) return;
                         await bankAccountService.initialize();
@@ -830,21 +1018,31 @@ class _HomeTabState extends State<_HomeTab> {
                   itemBuilder: (context, index) {
                     final account = accounts[index];
                     return GestureDetector(
-                      onLongPress: () => _showDeleteConfirmation(context, account, bankAccountService),
+                      onLongPress: () => _showDeleteConfirmation(
+                        context,
+                        account,
+                        bankAccountService,
+                      ),
                       child: Container(
                         width: 200,
                         margin: const EdgeInsets.only(right: 12),
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withValues(alpha: 13), // ~0.05 opacity
+                          color: AppTheme.primaryColor.withValues(
+                            alpha: 13,
+                          ), // ~0.05 opacity
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: AppTheme.primaryColor.withValues(alpha: 26), // ~0.1 opacity
+                            color: AppTheme.primaryColor.withValues(
+                              alpha: 26,
+                            ), // ~0.1 opacity
                             width: 1,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0x0D000000), // black with 0.05 opacity
+                              color: const Color(
+                                0x0D000000,
+                              ), // black with 0.05 opacity
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -859,7 +1057,8 @@ class _HomeTabState extends State<_HomeTab> {
                               children: [
                                 // Bank name and primary badge
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Flexible(
                                       child: Text(
@@ -879,8 +1078,13 @@ class _HomeTabState extends State<_HomeTab> {
                                           vertical: 2,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: AppTheme.primaryColor.withValues(alpha: 26), // ~0.1 opacity
-                                          borderRadius: BorderRadius.circular(10),
+                                          color: AppTheme.primaryColor
+                                              .withValues(
+                                                alpha: 26,
+                                              ), // ~0.1 opacity
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
                                         ),
                                         child: const Text(
                                           'Primary',
@@ -893,9 +1097,9 @@ class _HomeTabState extends State<_HomeTab> {
                                       ),
                                   ],
                                 ),
-                                
+
                                 const Spacer(),
-                                
+
                                 // Account number
                                 Text(
                                   '•••• ${account.accountNumber.substring(account.accountNumber.length - 4)}',
@@ -905,7 +1109,7 @@ class _HomeTabState extends State<_HomeTab> {
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                                
+
                                 // Account type and IFSC
                                 Text(
                                   '${account.accountType.toString().split('.').last} • ${account.ifscCode}',
@@ -916,7 +1120,7 @@ class _HomeTabState extends State<_HomeTab> {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                
+
                                 // Account holder name
                                 Text(
                                   account.accountHolderName,
@@ -930,7 +1134,7 @@ class _HomeTabState extends State<_HomeTab> {
                                 ),
                               ],
                             ),
-                            
+
                             // Delete button (appears on tap and hold)
                             Positioned(
                               top: 4,
@@ -967,10 +1171,7 @@ class _HomeTabState extends State<_HomeTab> {
             // Quick Actions
             const Text(
               'Quick Actions',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             Container(
@@ -992,91 +1193,73 @@ class _HomeTabState extends State<_HomeTab> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildActionButton(
-                        'Send',
-                        Icons.arrow_upward,
-                        () {
-                          // Navigate to transfer money screen with withdrawal type pre-selected
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => AddTransactionScreen(
-                                // Pre-select withdrawal transaction type
-                                initialTransactionType: TransactionType.withdrawal,
-                              ),
+                      _buildActionButton('Send', Icons.arrow_upward, () {
+                        // Navigate to transfer money screen with withdrawal type pre-selected
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AddTransactionScreen(
+                              // Pre-select withdrawal transaction type
+                              initialTransactionType:
+                                  TransactionType.withdrawal,
                             ),
-                          );
-                        },
-                      ),
-                      _buildActionButton(
-                        'Request',
-                        Icons.arrow_downward,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const QRGenerationScreen(),
+                          ),
+                        );
+                      }),
+                      _buildActionButton('Request', Icons.arrow_downward, () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const QRGenerationScreen(),
+                          ),
+                        );
+                      }),
+                      _buildActionButton('Transfer', Icons.swap_horiz, () {
+                        // Store context in a local variable to use after async gap
+                        final currentContext = context;
+
+                        Navigator.push(
+                          currentContext,
+                          MaterialPageRoute(
+                            builder: (context) => AddTransactionScreen(
+                              // Pre-select transfer transaction type
+                              initialTransactionType: TransactionType.transfer,
                             ),
-                          );
-                        },
-                      ),
-                      _buildActionButton(
-                        'Transfer',
-                        Icons.swap_horiz,
-                        () {
-                          // Store context in a local variable to use after async gap
-                          final currentContext = context;
-                          
-                          Navigator.push(
-                            currentContext,
-                            MaterialPageRoute(
-                              builder: (context) => AddTransactionScreen(
-                                // Pre-select transfer transaction type
-                                initialTransactionType: TransactionType.transfer,
-                              ),
-                            ),
-                          ).then((_) {
-                            // Refresh the dashboard when returning from transfer screen
-                            if (!currentContext.mounted) return;
-                            
-                            final transactionService = Provider.of<TransactionService>(
-                              currentContext, 
-                              listen: false
-                            );
-                            transactionService.initialize();
-                          });
-                        },
-                      ),
-                      _buildActionButton(
-                        'QR Scan',
-                        Icons.qr_code_scanner,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const QRScannerScreen(),
-                            ),
-                          );
-                        },
-                      ),
+                          ),
+                        ).then((_) {
+                          // Refresh the dashboard when returning from transfer screen
+                          if (!currentContext.mounted) return;
+
+                          final transactionService =
+                              Provider.of<TransactionService>(
+                                currentContext,
+                                listen: false,
+                              );
+                          transactionService.initialize();
+                        });
+                      }),
+                      _buildActionButton('QR Scan', Icons.qr_code_scanner, () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const QRScannerScreen(),
+                          ),
+                        );
+                      }),
                     ],
                   ),
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildActionButton(
-                        'Pay by Card',
-                        Icons.payment,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const PayByCardScreen(),
-                            ),
-                          );
-                        },
-                      ),
+                      _buildActionButton('Pay by Card', Icons.payment, () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PayByCardScreen(),
+                          ),
+                        );
+                      }),
                       const SizedBox(width: 80), // Spacer for centering
                       const SizedBox(width: 80), // Spacer for centering
                       const SizedBox(width: 80), // Spacer for centering
@@ -1093,14 +1276,12 @@ class _HomeTabState extends State<_HomeTab> {
               children: [
                 const Text(
                   'Recent Transactions',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 TextButton(
                   onPressed: () {
-                    final dashboardState = context.findAncestorStateOfType<_DashboardScreenState>();
+                    final dashboardState = context
+                        .findAncestorStateOfType<_DashboardScreenState>();
                     if (dashboardState != null && dashboardState.mounted) {
                       dashboardState.setState(() {
                         dashboardState._selectedIndex = 1; // Transactions tab
@@ -1184,8 +1365,14 @@ class _TransactionsTab extends StatelessWidget {
                   ),
                   child: Icon(t.icon, color: t.color, size: 20),
                 ),
-                title: Text(t.title, style: const TextStyle(fontWeight: FontWeight.w500)),
-                subtitle: Text(t.formattedDate, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                title: Text(
+                  t.title,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+                subtitle: Text(
+                  t.formattedDate,
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
                 trailing: Text(
                   t.formattedAmount,
                   style: TextStyle(
@@ -1232,34 +1419,21 @@ class _ProfileTab extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.grey[200],
-              border: Border.all(
-                color: AppTheme.primaryColor,
-                width: 2,
-              ),
+              border: Border.all(color: AppTheme.primaryColor, width: 2),
             ),
-            child: const Icon(
-              Icons.person,
-              size: 50,
-              color: Colors.grey,
-            ),
+            child: const Icon(Icons.person, size: 50, color: Colors.grey),
           ),
           const SizedBox(height: 16),
           // User Name
           Text(
             user?.name ?? 'User',
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           // User Email
           Text(
             user?.email ?? 'user@example.com',
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 16,
-            ),
+            style: const TextStyle(color: Colors.grey, fontSize: 16),
           ),
           const SizedBox(height: 32),
           // Menu Items
@@ -1281,9 +1455,7 @@ class _ProfileTab extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const MyCardsScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const MyCardsScreen()),
               );
             },
           ),
@@ -1305,9 +1477,7 @@ class _ProfileTab extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const SettingsScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
               );
             },
           ),
@@ -1317,9 +1487,7 @@ class _ProfileTab extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const HelpSupportScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const HelpSupportScreen()),
               );
             },
           ),
@@ -1360,10 +1528,7 @@ class _ProfileTab extends StatelessWidget {
           color: Colors.grey[100],
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(
-          icon,
-          color: AppTheme.primaryColor,
-        ),
+        child: Icon(icon, color: AppTheme.primaryColor),
       ),
       title: Text(title),
       trailing: const Icon(Icons.chevron_right, color: Colors.grey),

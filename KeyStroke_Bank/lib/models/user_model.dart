@@ -8,6 +8,7 @@ class UserModel {
   final String? phoneNumber;
   final DateTime? lastLogin;
   final Map<String, dynamic>? behaviorMetrics;
+  final bool hasMpin;
 
   UserModel({
     required this.id,
@@ -16,6 +17,7 @@ class UserModel {
     this.phoneNumber,
     this.lastLogin,
     this.behaviorMetrics,
+    this.hasMpin = false,
   });
 
   // Convert UserModel to Map
@@ -27,6 +29,7 @@ class UserModel {
       'phoneNumber': phoneNumber,
       'lastLogin': lastLogin?.toIso8601String(),
       'behaviorMetrics': behaviorMetrics,
+      'has_mpin': hasMpin,
     };
   }
 
@@ -44,8 +47,11 @@ class UserModel {
     if (dateStr.isEmpty) return null;
 
     // Prefer HTTP/RFC first (e.g., 'Wed, 13 Aug 2025 14:26:30 GMT')
-    if (dateStr.contains(',') && (dateStr.contains('GMT') || dateStr.contains('UTC'))) {
-      try { return HttpDate.parse(dateStr); } catch (_) {}
+    if (dateStr.contains(',') &&
+        (dateStr.contains('GMT') || dateStr.contains('UTC'))) {
+      try {
+        return HttpDate.parse(dateStr);
+      } catch (_) {}
     }
 
     // ISO 8601 next
@@ -55,7 +61,9 @@ class UserModel {
     } catch (_) {}
 
     // Fallback: attempt HTTP/RFC again even without the heuristic
-    try { return HttpDate.parse(dateStr); } catch (_) {}
+    try {
+      return HttpDate.parse(dateStr);
+    } catch (_) {}
 
     return null;
   }
@@ -73,6 +81,7 @@ class UserModel {
       phoneNumber: phoneNumber?.toString(),
       lastLogin: _parseDate(lastLogin),
       behaviorMetrics: map['behaviorMetrics'] as Map<String, dynamic>?,
+      hasMpin: map['has_mpin'] == true,
     );
   }
 
@@ -84,6 +93,7 @@ class UserModel {
     String? phoneNumber,
     DateTime? lastLogin,
     Map<String, dynamic>? behaviorMetrics,
+    bool? hasMpin,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -92,6 +102,7 @@ class UserModel {
       phoneNumber: phoneNumber ?? this.phoneNumber,
       lastLogin: lastLogin ?? this.lastLogin,
       behaviorMetrics: behaviorMetrics ?? this.behaviorMetrics,
+      hasMpin: hasMpin ?? this.hasMpin,
     );
   }
 }

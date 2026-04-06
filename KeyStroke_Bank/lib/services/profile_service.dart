@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'auth_service.dart';
 import 'api_service.dart';
+import '../screens/auth/mpin_screens.dart';
 
 class ProfileService extends ChangeNotifier {
   final AuthService _auth;
@@ -95,172 +96,64 @@ class ProfileService extends ChangeNotifier {
     }
   }
 
-  Future<void> setMpin(String mpin) async {
-    if (mpin.length != 6) {
-      throw Exception('MPIN must be 6 digits');
-    }
-
-    final user = _auth.currentUser;
-    if (user == null) return;
-
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-
-    try {
-      final response = await _api.post(
-        '/api/profiles/mpin',
-        data: {'mpin': mpin},
-      );
-      _logger.fine('Set MPIN response: $response');
-
-      if (response['status'] != 'success') {
-        throw Exception(response['message'] ?? 'Failed to set MPIN');
-      }
-
-      _logger.info('MPIN set successfully');
-    } catch (e) {
-      _error = 'Failed to set MPIN: ${e.toString()}';
-      _logger.severe('Error setting MPIN', e);
-      rethrow;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
   Future<bool> hasMpin() async {
+    await _auth.fetchCurrentUser(); // Ensure 100% sync from live database
     final user = _auth.currentUser;
-    if (user == null) return false;
-
-    try {
-      final response = await _api.get('/api/profiles/mpin/exists');
-      _logger.fine('Check MPIN exists response: $response');
-
-      if (response['status'] == 'success') {
-        return response['exists'] == true;
-      }
-      return false;
-    } catch (e) {
-      _logger.warning('Error checking MPIN existence', e);
-      return false;
-    }
-  }
-
-  Future<bool> verifyMpin(String mpin) async {
-    final user = _auth.currentUser;
-    if (user == null) return false;
-
-    try {
-      final response = await _api.post(
-        '/api/profiles/mpin/verify',
-        data: {'mpin': mpin},
-      );
-      _logger.fine('Verify MPIN response: $response');
-
-      if (response['status'] == 'success') {
-        return response['verified'] == true;
-      }
-      return false;
-    } catch (e) {
-      _logger.warning('Error verifying MPIN', e);
-      return false;
-    }
+    return user?.hasMpin ?? false;
   }
 
   Future<bool> requireMpin(BuildContext context) async {
     if (!await hasMpin()) {
-      // Ask user to set MPIN first
       if (context.mounted) {
-        final set = await _showSetMpinDialog(context);
-        if (!set) return false;
+        final result = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.security, color: Colors.blueAccent),
+                SizedBox(width: 8),
+                Text('MPIN Required'),
+              ],
+            ),
+            content: const Text(
+              'You must set up a secure 4-digit MPIN before transferring funds. Do you want to set it up now?',
+            ),
+            actions: [
+              TextButton(
+                child: const Text('Cancel'),
+                onPressed: () => Navigator.pop(ctx, false),
+              ),
+              ElevatedButton(
+                child: const Text('Setup MPIN'),
+                onPressed: () => Navigator.pop(ctx, true),
+              ),
+            ],
+          ),
+        );
+
+        if (result == true) {
+          if (context.mounted) {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const MpinSetupScreen()),
+            );
+            final user = _auth.currentUser;
+            if (user == null || !user.hasMpin) return false;
+          } else {
+            return false;
+          }
+        } else {
+          return false;
+        }
       } else {
         return false;
       }
     }
+
+    // Launch secure 3-strike modal
     if (context.mounted) {
-      return _showVerifyMpinDialog(context);
+      return await MpinVerificationModal.show(context);
     }
     return false;
-  }
-
-  Future<bool> _showSetMpinDialog(BuildContext context) async {
-    final controller = TextEditingController();
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Set 6-digit MPIN'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          maxLength: 6,
-          obscureText: true,
-          decoration: const InputDecoration(counterText: ''),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              if (controller.text.length == 6) {
-                if (context.mounted) {
-                  try {
-                    await setMpin(controller.text);
-                    if (context.mounted) {
-                      Navigator.pop(context, true);
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Failed to set MPIN: $e')),
-                      );
-                    }
-                  }
-                }
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-    return result ?? false;
-  }
-
-  Future<bool> _showVerifyMpinDialog(BuildContext context) async {
-    final controller = TextEditingController();
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Enter MPIN'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          maxLength: 6,
-          obscureText: true,
-          decoration: const InputDecoration(counterText: ''),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              if (context.mounted) {
-                final valid = await verifyMpin(controller.text);
-                if (context.mounted) {
-                  Navigator.pop(context, valid);
-                }
-              }
-            },
-            child: const Text('Verify'),
-          ),
-        ],
-      ),
-    );
-    return ok ?? false;
   }
 }
