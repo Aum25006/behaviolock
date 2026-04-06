@@ -109,8 +109,9 @@ class _BehavioralCalibrationScreenState
 
       // 2. Extract mathematical matrices
       final profile = keystrokeService.behavioralProfile;
-      if (profile == null)
+      if (profile == null) {
         throw Exception('Local modeling failed to generate profile');
+      }
 
       // 3. Convert raw keystroke data to API format
       final calibrationData = _calibrationSessions.map((session) {

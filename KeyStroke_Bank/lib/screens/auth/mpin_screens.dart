@@ -289,6 +289,7 @@ class _MpinVerificationModalState extends State<MpinVerificationModal> {
     final prefs = await SharedPreferences.getInstance();
     int strikes = prefs.getInt('mpin_strikes') ?? 0;
 
+    if (!mounted) return;
     try {
       final api = context.read<ApiService>();
       final res = await api.post(

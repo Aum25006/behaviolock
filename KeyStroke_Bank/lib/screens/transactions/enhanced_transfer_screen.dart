@@ -667,6 +667,8 @@ class _EnhancedTransferScreenState extends State<EnhancedTransferScreen> {
     final authService = context.read<AuthService>();
     await authService
         .fetchCurrentUser(); // Ask the database! Stop using local cache!
+
+    if (!mounted) return;
     final user = authService.currentUser;
     if (user != null && !user.hasMpin) {
       final result = await showDialog<bool>(
@@ -705,6 +707,7 @@ class _EnhancedTransferScreenState extends State<EnhancedTransferScreen> {
     }
 
     // Prompt the 3-Strike MPIN Pad
+    if (!mounted) return;
     final isVerified = await MpinVerificationModal.show(context);
     if (!isVerified) return; // Halt transaction gracefully
     // =====================================
@@ -712,6 +715,7 @@ class _EnhancedTransferScreenState extends State<EnhancedTransferScreen> {
     try {
       setState(() => _isLoading = true);
 
+      if (!mounted) return;
       final transactionService = context.read<TransactionService>();
       final amount = double.parse(_amountController.text);
 
